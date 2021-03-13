@@ -14,10 +14,8 @@ from db.dbutils import session
 
 
 # todo :
-# Поправить разбиение больших сообщений
-# Добавить внесение ключевых слов +
 # Добавить поиск по внесенным ключевым словам... надо подумать
-# Выводить id вакансии и url
+
 
 @dp.message_handler(Command("get_vacancies"))
 async def show_items(message: Message, state: FSMContext):
@@ -54,13 +52,13 @@ async def take_a_look(call: CallbackQuery, state: FSMContext):
     vobj = get_vacancy_obj(cur_vacancy_id, session)
     if vobj:
         vmessage = VacancyMessage(vobj)
-        vtitle, vbody, vid, vlink = vmessage.make_message()
+        vtitle, vbody, vid, vlink, vdate = vmessage.make_message()
 
-        if cur_vac_ix < len(list_of_vacs):
+        if cur_vac_ix < len(list_of_vacs) - 1:
             async with state.proxy() as data:
                 data["next_vacancy_id"] = list_of_vacs[cur_vac_ix + 1]
 
-        await call.message.answer(f'{vtitle}')
+        await call.message.answer(f'{vtitle} ({vdate})')
 
         if isinstance(vbody, list):
             for el in vbody:
@@ -95,18 +93,24 @@ async def step_forward(call: CallbackQuery, state: FSMContext):
     logging.info(f"{callback_data} {cur_vacancy_id} {next_vacancy_id}")
 
     vobj = get_vacancy_obj(cur_vacancy_id, session)
-    vmessage = VacancyMessage(vobj)
-    vtitle, vbody, vid, vlink = vmessage.make_message()
+    if vobj:
+        vmessage = VacancyMessage(vobj)
+        vtitle, vbody, vid, vlink, vdate = vmessage.make_message()
 
-    logging.info(f"{vtitle} {vbody} {vid}")
+        logging.info(f"{vtitle} {vbody} {vid}")
 
-    await call.message.answer(f'{vtitle}')
-    if isinstance(vbody, list):
-        for el in vbody:
-            await call.message.answer(f'{el}')
+        await call.message.answer(f'{vtitle} ({vdate})')
+        if isinstance(vbody, list):
+            for el in vbody:
+                await call.message.answer(f'{el}')
+        else:
+            await call.message.answer(f'{vbody}')
+        await call.message.answer(f'{vlink}', reply_markup=second_choice)
     else:
-        await call.message.answer(f'{vbody}')
-    await call.message.answer(f'{vlink}', reply_markup=second_choice)
+        if cur_vac_ix < len(list_of_vacs):
+            async with state.proxy() as data:
+                data["next_vacancy_id"] = list_of_vacs[cur_vac_ix + 1]
+        await call.message.answer(f'Возможно вакансия удалена', reply_markup=second_choice)
 
 
 @dp.callback_query_handler(text="cancel")

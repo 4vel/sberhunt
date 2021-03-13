@@ -143,6 +143,7 @@ class VacancyMessage:
         self.title = vobj.vactitle
         self.vac_id = vobj.vacid
         self.vaclink = vobj.vaclink
+        self.vdate = vobj.vacdate
 
     def check_data(self):
         if self.vacdescription == "":
@@ -194,7 +195,7 @@ class VacancyMessage:
     def make_message(self):
         self.check_data()
         self.check_description()
-        return self.title, self.vacdescription, self.vac_id, self.vaclink
+        return self.title, self.vacdescription, self.vac_id, self.vaclink, self.vdate
 
 
 class VacNavigator:
